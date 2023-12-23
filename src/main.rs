@@ -1,9 +1,14 @@
 mod vector;
 mod ray;
+mod shapes;
+mod scene;
 
 use std::fs::File;
+use std::time::Instant;
 use image::{ImageOutputFormat, Rgb, RgbImage};
 use crate::ray::Ray;
+use crate::scene::Scene;
+use crate::shapes::Sphere;
 use crate::vector::Vec3;
 
 fn main() {
@@ -25,6 +30,12 @@ fn main() {
     let viewport_top_left = camera_center - Vec3::new(0.0, 0.0, focal_length) - 0.5 * viewport_u - 0.5 * viewport_v;
     let top_left_pixel_pos = viewport_top_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
+    let mut scene = Scene::new();
+    scene.add(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5));
+    scene.add(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0));
+
+    let start = Instant::now();
+
     let mut img = RgbImage::new(image_width, image_height);
     for y in 0..image_height {
         print!("\ry = {}", y);
@@ -32,12 +43,15 @@ fn main() {
             let viewport_pixel = top_left_pixel_pos + (x as f64 * pixel_delta_u) + (y as f64 * pixel_delta_v);
             let ray_dir = viewport_pixel - camera_center;
             let ray = Ray::new(camera_center, ray_dir);
-            let color = ray_color(ray);
+            let color = ray_color(ray, &scene);
 
             img.put_pixel(x, y, color);
         }
     }
-    println!("\rDone.  ");
+
+    let elapsed = start.elapsed();
+    println!("\rDone in {:.2?}", elapsed);
+
     let mut file = File::create("test.png").unwrap();
     img.write_to(&mut file, ImageOutputFormat::Png).unwrap();
 }
@@ -50,16 +64,14 @@ fn color(r: f64, g: f64, b: f64) -> Rgb<u8> {
     ])
 }
 
-fn ray_color(ray: Ray) -> Rgb<u8> {
-    let t = hit_sphere(Vec3::new(0.0, 0.0, -1.0), 0.5, ray);
-    if t != -1.0 {
-    }
-    if t > 0.0 {
-        let normal = (ray.at(t) - Vec3::new(0.0, 0.0, -1.0)).normalize();
+fn ray_color(ray: Ray, scene: &Scene) -> Rgb<u8> {
+    let hit_result = scene.hit(ray, 0.0..f64::INFINITY);
+    if let Some(hit_result) = hit_result {
+        let normal = hit_result.normal();
         return color(
-            0.5 * normal.x() + 1.0,
-            0.5 * normal.y() + 1.0,
-            0.5 * normal.z() + 1.0,
+            0.5 * normal.x() + 0.5,
+            0.5 * normal.y() + 0.5,
+            0.5 * normal.z() + 0.5,
         );
     }
 
@@ -68,20 +80,6 @@ fn ray_color(ray: Ray) -> Rgb<u8> {
     color(
         (1.0-a) * 1.0 + 0.7 * a,
         (1.0-a) * 1.0 + 1.0 * a,
-        (1.0-a) * 1.0 + 0.5 * a,
+        (1.0-a) * 1.0 + 1.0 * a,
     )
-}
-
-fn hit_sphere(center: Vec3, radius: f64, ray: Ray) -> f64 {
-    let oc = ray.origin() - center;
-    let a = ray.dir().norm_sq();
-    let half_b = oc.dot(ray.dir());
-    let c = oc.norm_sq() - radius * radius;
-    let discriminant = half_b*half_b - a*c;
-    return if discriminant < 0.0 {
-        -1.0
-    } else {
-        // Get smallest t
-        (-half_b - discriminant.sqrt()) / a
-    }
 }
