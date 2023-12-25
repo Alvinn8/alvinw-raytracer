@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Sub};
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Vec3 {
@@ -53,6 +53,14 @@ impl Add for Vec3 {
     }
 }
 
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
+    }
+}
+
 // Vector subtraction
 impl Sub for Vec3 {
     type Output = Self;
@@ -89,6 +97,14 @@ impl Div<f64> for Vec3 {
             self.y / rhs,
             self.z / rhs,
         )
+    }
+}
+
+impl DivAssign<f64> for Vec3 {
+    fn div_assign(&mut self, rhs: f64) {
+        self.x /= rhs;
+        self.y /= rhs;
+        self.z /= rhs;
     }
 }
 
