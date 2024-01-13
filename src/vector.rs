@@ -1,4 +1,5 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Sub};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Range, Sub};
+use rand::random;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct Vec3 {
@@ -12,13 +13,23 @@ impl Vec3 {
         Self { x, y, z }
     }
     pub fn zero() -> Self { Self::new(0.0, 0.0, 0.0) }
+    pub fn random() -> Self {
+        let (rx, ry, rz): (f64, f64, f64) = random();
+        Self::new(rx * 2.0 - 1.0, ry * 2.0 - 1.0, rz * 2.0 - 1.0)
+    }
+    pub fn random_on_hemisphere(normal: Vec3) -> Vec3 {
+        let vec = Vec3::random().normalize();
+        if vec.dot(normal) > 0.0 {
+            vec
+        } else {
+            -vec
+        }
+    }
 
     pub fn x(&self) -> f64 { self.x }
     pub fn y(&self) -> f64 { self.y }
     pub fn z(&self) -> f64 { self.z }
-}
 
-impl Vec3 {
     pub fn norm_sq(&self) -> f64 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
@@ -83,6 +94,18 @@ impl Mul<Vec3> for f64 {
             self * rhs.x,
             self * rhs.y,
             self * rhs.z,
+        )
+    }
+}
+
+impl Neg for Vec3 {
+    type Output = Vec3;
+
+    fn neg(self) -> Self::Output {
+        Self::new(
+            -self.x,
+            -self.y,
+            -self.z,
         )
     }
 }

@@ -14,6 +14,7 @@ pub struct Camera {
     pixel_delta_u: Vec3,
     pixel_delta_v: Vec3,
     top_left_pixel_pos: Vec3,
+    max_depth: u32,
 }
 
 impl Camera {
@@ -40,6 +41,7 @@ impl Camera {
             pixel_delta_u,
             pixel_delta_v,
             top_left_pixel_pos,
+            max_depth: 50,
         }
     }
 
@@ -48,13 +50,13 @@ impl Camera {
 
         let mut img = RgbImage::new(self.image_width, self.image_height);
         for y in 0..self.image_height {
-            print!("\ry = {}", y);
+            print!("\r{:.2}%   ", (y as f64 / self.image_height as f64) * 100.0);
             for x in 0..self.image_width {
                 // Average colors (anti-aliasing)
                 let mut color = Vec3::zero();
                 for i in 0..10 {
                     let ray = self.ray_rand(x, y);
-                    let color_i = self.ray_color(ray, &scene);
+                    let color_i = self.ray_color(ray, &scene, self.max_depth);
                     color += color_i;
                 }
                 color /= 10.0;
@@ -65,7 +67,7 @@ impl Camera {
         }
 
         let elapsed = start.elapsed();
-        println!("\rDone in {:.2?}", elapsed);
+        println!("\nDone in {:.2?}", elapsed);
 
         img
     }
@@ -80,15 +82,16 @@ impl Camera {
         Ray::new(self.center, ray_dir)
     }
 
-    fn ray_color(&self, ray: Ray, scene: &Scene) -> Vec3 {
-        let hit_result = scene.hit(ray, 0.0..f64::INFINITY);
+    fn ray_color(&self, ray: Ray, scene: &Scene, depth: u32) -> Vec3 {
+        if depth < 1 {
+            return Vec3::zero();
+        }
+        let hit_result = scene.hit(ray, 0.001..f64::INFINITY);
         if let Some(hit_result) = hit_result {
             let normal = hit_result.normal();
-            return Vec3::new(
-                0.5 * normal.x() + 0.5,
-                0.5 * normal.y() + 0.5,
-                0.5 * normal.z() + 0.5,
-            );
+            let bounce_dir = normal + Vec3::random().normalize();
+            let bounce_ray = Ray::new(hit_result.hit_point(), bounce_dir);
+            return 0.5 * self.ray_color(bounce_ray, scene, depth - 1);
         }
 
         let dir_n = ray.dir().normalize();
@@ -103,8 +106,12 @@ impl Camera {
 
 fn to_rgb(r: f64, g: f64, b: f64) -> Rgb<u8> {
     return Rgb([
-        (r * 255.0) as u8,
-        (g * 255.0) as u8,
-        (b * 255.0) as u8,
+        (gamma_correction(r) * 255.0) as u8,
+        (gamma_correction(g) * 255.0) as u8,
+        (gamma_correction(b) * 255.0) as u8,
     ])
+}
+
+fn gamma_correction(value: f64) -> f64 {
+    return value.sqrt();
 }
