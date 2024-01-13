@@ -54,12 +54,13 @@ impl Camera {
             for x in 0..self.image_width {
                 // Average colors (anti-aliasing)
                 let mut color = Vec3::zero();
-                for i in 0..10 {
+                let sample_count = 50;
+                for i in 0..sample_count {
                     let ray = self.ray_rand(x, y);
                     let color_i = self.ray_color(ray, &scene, self.max_depth);
                     color += color_i;
                 }
-                color /= 10.0;
+                color /= sample_count as f64;
 
                 let rgb = to_rgb(color.x(), color.y(), color.z());
                 img.put_pixel(x, y, rgb);
@@ -88,10 +89,11 @@ impl Camera {
         }
         let hit_result = scene.hit(ray, 0.001..f64::INFINITY);
         if let Some(hit_result) = hit_result {
-            let normal = hit_result.normal();
-            let bounce_dir = normal + Vec3::random().normalize();
-            let bounce_ray = Ray::new(hit_result.hit_point(), bounce_dir);
-            return 0.5 * self.ray_color(bounce_ray, scene, depth - 1);
+            if let Some(scatter) = hit_result.material().scatter(ray, &hit_result) {
+                return scatter.attenuation * self.ray_color(scatter.ray, scene, depth - 1);
+            }
+
+            return Vec3::zero();
         }
 
         let dir_n = ray.dir().normalize();

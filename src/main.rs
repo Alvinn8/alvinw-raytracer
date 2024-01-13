@@ -4,10 +4,12 @@ mod shapes;
 mod scene;
 mod camera;
 mod util;
+mod material;
 
 use std::fs::File;
 use image::ImageOutputFormat;
 use crate::camera::Camera;
+use crate::material::Material;
 use crate::scene::Scene;
 use crate::shapes::Sphere;
 use crate::vector::Vec3;
@@ -20,8 +22,18 @@ fn main() {
     let camera = Camera::new(Vec3::new(0.0, 0.0, 0.0), image_width, image_height);
 
     let mut scene = Scene::new();
-    scene.add(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5));
-    scene.add(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0));
+
+    let ground_material = Material::Diffuse { color: Vec3::new(0.8, 0.8, 0.0) };
+    let diffuse1 = Material::Diffuse { color: Vec3::new(0.7, 0.3, 0.3) };
+    let metal1 = Material::Metal { color: Vec3::new(0.8, 0.8, 0.8), fuzz: 0.3 };
+    let metal2 = Material::Metal { color: Vec3::new(0.8, 0.6, 0.2), fuzz: 1.0 };
+    let glass1 = Material::Glass { refractive_index: 1.5 };
+    let glass2 = Material::Glass { refractive_index: 1.5 };
+
+    scene.add(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, ground_material));
+    scene.add(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, glass1));
+    scene.add(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.4, glass2));
+    scene.add(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, metal2));
 
     let img = camera.render_image(&scene);
 

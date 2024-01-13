@@ -30,6 +30,11 @@ impl Vec3 {
     pub fn y(&self) -> f64 { self.y }
     pub fn z(&self) -> f64 { self.z }
 
+    pub fn is_near_zero(&self) -> bool {
+        let epsilon = 1e-8;
+        return self.x.abs() < epsilon && self.y.abs() < epsilon && self.z.abs() < epsilon;
+    }
+
     pub fn norm_sq(&self) -> f64 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
@@ -48,6 +53,18 @@ impl Vec3 {
     }
     pub fn normalize(self) -> Self {
         (1.0 / self.norm()) * self
+    }
+    pub fn reflect(&self, normal: Vec3) -> Vec3 {
+        return *self - 2.0 * self.dot(normal) * normal;
+    }
+    pub fn refract(&self, normal: Vec3, refractive_index: f64) -> Vec3 {
+        // self and normal have to be unit vectors
+        let cos = (-*self).dot(normal).min(1.0);
+        // Calculate vector components with some magic math (Fysik 2 bytningsindex typ)
+        let perp = refractive_index * (*self + cos * normal);
+        let parallel = -(1.0 - perp.norm_sq()).abs().sqrt() * normal;
+        // And add
+        return perp + parallel;
     }
 }
 
@@ -128,6 +145,19 @@ impl DivAssign<f64> for Vec3 {
         self.x /= rhs;
         self.y /= rhs;
         self.z /= rhs;
+    }
+}
+
+// Multiplication
+impl Mul<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, rhs: Vec3) -> Self::Output {
+        Vec3::new(
+            self.x * rhs.x,
+            self.y * rhs.y,
+            self.z * rhs.z,
+        )
     }
 }
 

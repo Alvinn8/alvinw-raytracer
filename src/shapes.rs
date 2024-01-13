@@ -1,17 +1,22 @@
 use std::ops::Range;
+use crate::material::Material;
 use crate::ray::Ray;
 use crate::vector::Vec3;
 
-pub struct HitResult {
+pub struct HitResult<'a> {
     t: f64,
     hit_point: Vec3,
     normal: Vec3,
+    material: &'a Material,
+    front_face: bool,
 }
 
-impl HitResult {
+impl<'a> HitResult<'a> {
     pub fn t(&self) -> f64 { self.t }
     pub fn hit_point(&self) -> Vec3 { self.hit_point }
     pub fn normal(&self) -> Vec3 { self.normal }
+    pub fn material(&self) -> &Material { self.material }
+    pub fn front_face(&self) -> bool { self.front_face }
 }
 
 pub trait Hittable {
@@ -21,10 +26,11 @@ pub trait Hittable {
 pub struct Sphere {
     center: Vec3,
     radius: f64,
+    material: Material,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3, radius: f64) -> Self { Self { center, radius } }
+    pub fn new(center: Vec3, radius: f64, material: Material) -> Self { Self { center, radius, material } }
 }
 
 impl Hittable for Sphere {
@@ -48,10 +54,20 @@ impl Hittable for Sphere {
         }
 
         let hit_point = ray.at(root);
+        let outward_normal = (hit_point - self.center) / self.radius;
+        let (normal, front_face) =  if ray.dir().dot(outward_normal) > 0.0 {
+            // ray is inside the sphere
+            (-outward_normal, false)
+        } else {
+            // ray is outside the sphere
+            (outward_normal, true)
+        };
         Some(HitResult {
             t: root,
             hit_point,
-            normal: (hit_point - self.center) / self.radius,
+            normal,
+            material: &self.material,
+            front_face,
         })
     }
 }
