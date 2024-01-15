@@ -19,12 +19,17 @@ fn main() {
     let image_width = 500;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
 
-    let camera = Camera::new(Vec3::new(0.0, 0.0, 0.0), image_width, image_height);
+    let fov = 30.0;
+    let camera_from = Vec3::new(-2.0, 2.0, 1.0);
+    let camera_to = Vec3::new(0.0, 0.0, -1.0);
+    let camera_up = Vec3::new(0.0, 1.0, 0.0);
+    let camera = Camera::new(camera_from, camera_to, camera_up, image_width, image_height, fov);
 
     let mut scene = Scene::new();
 
     let ground_material = Material::Diffuse { color: Vec3::new(0.8, 0.8, 0.0) };
     let diffuse1 = Material::Diffuse { color: Vec3::new(0.7, 0.3, 0.3) };
+    let diffuse2 = Material::Diffuse { color: Vec3::new(0.3, 0.3, 0.7) };
     let metal1 = Material::Metal { color: Vec3::new(0.8, 0.8, 0.8), fuzz: 0.3 };
     let metal2 = Material::Metal { color: Vec3::new(0.8, 0.6, 0.2), fuzz: 1.0 };
     let glass1 = Material::Glass { refractive_index: 1.5 };
