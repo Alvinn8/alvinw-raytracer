@@ -109,3 +109,60 @@ impl Hittable for InfinitePlane {
         })
     }
 }
+
+#[derive(Debug)]
+pub struct Triangle {
+    v0: Vec3,
+    v1: Vec3,
+    v2: Vec3,
+    material: Material,
+}
+
+impl Triangle {
+    pub fn new(v0: Vec3, v1: Vec3, v2: Vec3, material: Material) -> Self {
+        Self { v0, v1, v2, material, }
+    }
+}
+
+impl Hittable for Triangle {
+    fn hit(&self, ray: Ray, t_range: Range<f64>) -> Option<HitResult> {
+        // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+        let edge1 = self.v1 - self.v0;
+        let edge2 = self.v2 - self.v0;
+        let ray_cross_e2 = ray.dir().cross(edge2);
+        let det = edge1.dot(ray_cross_e2);
+
+        // Triangle is parallel to ray
+        if det.abs() < f64::EPSILON {
+            return None;
+        }
+
+        let inv_det = 1.0 / det;
+        let s = ray.origin() - self.v0;
+        let u = inv_det * s.dot(ray_cross_e2);
+        if u < 0.0 || u > 1.0 {
+            return None;
+        }
+
+        let s_cross_e1 = s.cross(edge1);
+        let v = inv_det * ray.dir().dot(s_cross_e1);
+        if v < 0.0 || u + v > 1.0 {
+            return None;
+        }
+
+        // Cramers regel wow!
+        let t = edge2.dot(s_cross_e1) * inv_det;
+        
+        if !t_range.contains(&t) {
+            return None;
+        }
+
+        Some(HitResult {
+            t,
+            hit_point: ray.at(t),
+            normal: edge1.cross(edge2).normalize(),
+            material: &self.material,
+            front_face: false,
+        })
+    }
+}

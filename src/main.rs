@@ -5,13 +5,15 @@ mod scene;
 mod camera;
 mod util;
 mod material;
+mod obj;
 
 use std::fs::File;
 use image::ImageOutputFormat;
 use crate::camera::Camera;
 use crate::material::Material;
+use crate::obj::obj_to_triangles;
 use crate::scene::Scene;
-use crate::shapes::{InfinitePlane, Sphere};
+use crate::shapes::{InfinitePlane, Sphere, Triangle};
 use crate::vector::Vec3;
 
 fn main() {
@@ -20,8 +22,8 @@ fn main() {
     let image_height = (image_width as f64 / aspect_ratio) as u32;
 
     let fov = 55.0;
-    let camera_from = Vec3::new(-1.0, 0.25, 2.0);
-    let camera_to = Vec3::new(1.0, 0.0, -1.0);
+    let camera_from = Vec3::new(-0.8, 0.9, 1.6);
+    let camera_to = Vec3::new(-0.4, 0.65, 0.0);
     let camera_up = Vec3::new(0.0, 1.0, 0.0);
     let camera = Camera::new(camera_from, camera_to, camera_up, image_width, image_height, fov);
 
@@ -41,6 +43,16 @@ fn main() {
     scene.add_sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.4, glass2));
     scene.add_sphere(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, metal2));
     scene.add_sphere(Sphere::new(Vec3::new(1.0, -0.3, -2.0), 0.2, diffuse1));
+    // scene.add_triangle(Triangle::new(
+    //     Vec3::new(0.0, 0.0, 0.0),
+    //     Vec3::new(1.0, 0.0, 0.0),
+    //     Vec3::new(0.0, 1.0, 0.0),
+    //     diffuse2.clone()
+    // ));
+
+    let suzanne = obj_to_triangles("/Users/Alvin/Downloads/suzanne.obj", Vec3::new(0.0, 1.0, -2.0), diffuse2).expect("Failed to read suzanne.obj");
+    // suzanne.into_iter().for_each(|triangle| scene.add_triangle(triangle));
+    println!("{} shapes", scene.count());
 
     let img = camera.render_image(&scene);
 

@@ -3,6 +3,7 @@ use crate::ray::Ray;
 use crate::shapes::HitResult;
 use crate::vector::Vec3;
 
+#[derive(Clone, Debug)]
 pub enum Material {
     Diffuse {
         color: Vec3,
@@ -49,6 +50,17 @@ impl Material {
                 }
             }
             Material::Glass { refractive_index } => {
+                if random::<f64>() > 0.90 {
+                    let reflected = ray.dir().reflect(hit_result.normal());
+                    if reflected.dot(hit_result.normal()) < 0.0 {
+                        return None;
+                    }
+                    let ray = Ray::new(hit_result.hit_point(), reflected);
+                    return Some(Scatter {
+                        ray,
+                        attenuation: Vec3::new(1.0, 1.0, 1.0)
+                    });
+                }
                 let refraction_ratio = if hit_result.front_face() {
                     1.0 / refractive_index
                 } else {

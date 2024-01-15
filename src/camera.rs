@@ -68,11 +68,11 @@ impl Camera {
 
         let mut img = RgbImage::new(self.image_width, self.image_height);
         for y in 0..self.image_height {
-            print!("\r {} / {}", y, self.image_height);
+            println!("{} / {}", y, self.image_height);
             for x in 0..self.image_width {
                 // Average colors (anti-aliasing)
                 let mut color = Vec3::zero();
-                let sample_count = 10;
+                let sample_count = 50;
                 for i in 0..sample_count {
                     let ray = self.ray_rand(x, y);
                     let color_i = self.ray_color(ray, &scene, self.max_depth);
