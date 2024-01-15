@@ -71,3 +71,41 @@ impl Hittable for Sphere {
         })
     }
 }
+
+pub struct InfinitePlane {
+    dist: f64,
+    normal: Vec3,
+    material: Material,
+}
+
+impl InfinitePlane {
+    pub fn new(dist: f64, normal: Vec3, material: Material) -> InfinitePlane {
+        InfinitePlane {
+            dist,
+            normal: normal.normalize(),
+            material,
+        }
+    }
+}
+
+impl Hittable for InfinitePlane {
+    fn hit(&self, ray: Ray, t_range: Range<f64>) -> Option<HitResult> {
+        let denominator = ray.dir().dot(self.normal);
+        if denominator == 0.0 {
+            return None;
+        }
+        let numerator = self.dist - ray.origin().dot(self.normal);
+
+        let t = numerator / denominator;
+        if !t_range.contains(&t) {
+            return None;
+        }
+        Some(HitResult {
+            t,
+            hit_point: ray.at(t),
+            normal: -self.normal,
+            material: &self.material,
+            front_face: false,
+        })
+    }
+}

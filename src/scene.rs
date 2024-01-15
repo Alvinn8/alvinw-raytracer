@@ -1,16 +1,26 @@
 use std::ops::Range;
 use crate::ray::Ray;
-use crate::shapes::{HitResult, Hittable, Sphere};
+use crate::shapes::{HitResult, Hittable, InfinitePlane, Sphere};
 
 pub struct Scene {
     spheres: Vec<Sphere>,
+    infinite_planes: Vec<InfinitePlane>,
 }
 
 impl Scene {
-    pub fn new() -> Self { Self { spheres: Vec::new() } }
+    pub fn new() -> Self {
+        Self {
+            spheres: Vec::new(),
+            infinite_planes: Vec::new(),
+        }
+    }
 
-    pub fn add(&mut self, sphere: Sphere) {
+    pub fn add_sphere(&mut self, sphere: Sphere) {
         self.spheres.push(sphere);
+    }
+
+    pub fn add_inf_plane(&mut self, plane: InfinitePlane) {
+        self.infinite_planes.push(plane);
     }
 
     pub fn hit(&self, ray: Ray, t_range: Range<f64>) -> Option<HitResult> {
@@ -19,6 +29,12 @@ impl Scene {
 
         for sphere in &self.spheres {
             if let Some(hit_result) = sphere.hit(ray, t_range.start..closest_t) {
+                closest_t = hit_result.t();
+                closest = Some(hit_result);
+            }
+        }
+        for inf_plane in &self.infinite_planes {
+            if let Some(hit_result) = inf_plane.hit(ray, t_range.start..closest_t) {
                 closest_t = hit_result.t();
                 closest = Some(hit_result);
             }

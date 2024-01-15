@@ -68,7 +68,7 @@ impl Camera {
 
         let mut img = RgbImage::new(self.image_width, self.image_height);
         for y in 0..self.image_height {
-            print!("\r{:.2}%   ", (y as f64 / self.image_height as f64) * 100.0);
+            print!("\r {} / {}", y, self.image_height);
             for x in 0..self.image_width {
                 // Average colors (anti-aliasing)
                 let mut color = Vec3::zero();
