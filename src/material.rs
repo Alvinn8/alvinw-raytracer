@@ -14,6 +14,10 @@ pub enum Material {
     },
     Glass {
         refractive_index: f64,
+    },
+    Light {
+        color: Vec3,
+        intensity: f64,
     }
 }
 
@@ -87,7 +91,21 @@ impl Material {
                     attenuation: Vec3::new(1.0, 1.0, 1.0)
                 }
             }
+            Material::Light { .. } => {
+                return None
+            }
         })
+    }
+
+    pub fn get_light(&self) -> Vec3 {
+        match self {
+            Material::Light { color, intensity } => {
+                *intensity * *color
+            },
+            _ => {
+                Vec3::zero()
+            }
+        }
     }
 }
 

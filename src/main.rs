@@ -36,13 +36,14 @@ fn main() {
     let metal2 = Material::Metal { color: Vec3::new(0.8, 0.6, 0.2), fuzz: 1.0 };
     let glass1 = Material::Glass { refractive_index: 1.5 };
     let glass2 = Material::Glass { refractive_index: 1.5 };
+    let light1 = Material::Light { color: Vec3::new(1.0, 0.5, 0.5), intensity: 5.0 };
 
     scene.add_inf_plane(InfinitePlane::new(0.5, Vec3::new(0.0, -1.0, 0.0), ground_material));
     // scene.add_sphere(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, ground_material));
-    scene.add_sphere(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, diffuse1));
+    scene.add_sphere(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, metal1));
     scene.add_sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.4, glass2));
     scene.add_sphere(Sphere::new(Vec3::new(1.0, 0.0, -1.0), 0.5, metal2));
-    scene.add_sphere(Sphere::new(Vec3::new(1.0, -0.3, -2.0), 0.2, diffuse2.clone()));
+    scene.add_sphere(Sphere::new(Vec3::new(1.0, 3.5, 2.0), 1.0, light1));
     // scene.add_triangle(Triangle::new(
     //     Vec3::new(0.0, 0.0, 0.0),
     //     Vec3::new(1.0, 0.0, 0.0),
@@ -50,8 +51,8 @@ fn main() {
     //     diffuse2.clone()
     // ));
 
-    // let suzanne = obj_to_triangles("/Users/Alvin/Downloads/suzanne.obj", Vec3::new(0.0, 1.0, -2.0), diffuse2).expect("Failed to read suzanne.obj");
-    // suzanne.into_iter().for_each(|triangle| scene.add_triangle(triangle));
+    let suzanne = obj_to_triangles("/Users/Alvin/Downloads/suzanne.obj", Vec3::new(0.0, 1.0, -2.0), diffuse2).expect("Failed to read suzanne.obj");
+    suzanne.into_iter().for_each(|triangle| scene.add_triangle(triangle));
     println!("{} shapes", scene.count());
 
     let img = camera.render_image(&scene);

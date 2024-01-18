@@ -72,7 +72,7 @@ impl Camera {
             for x in 0..self.image_width {
                 // Average colors (anti-aliasing)
                 let mut color = Vec3::zero();
-                let sample_count = 50;
+                let sample_count = 100;
                 for i in 0..sample_count {
                     let ray = self.ray_rand(x, y);
                     let color_i = self.ray_color(ray, &scene, self.max_depth);
@@ -107,25 +107,13 @@ impl Camera {
         }
         let hit_result = scene.hit(ray, 0.001..f64::INFINITY);
         if let Some(hit_result) = hit_result {
-            // let light_pos = Vec3::new(5.0, 5.0, 5.0);
-            // let light_dir = (light_pos - hit_result.hit_point()).normalize();
-            // let light_ray = Ray::new(hit_result.hit_point() + 0.001 * light_dir, light_dir);
-            // let mut light_multiplier = Vec3::new(1.0, 1.0, 1.0);
-            // let mut light_bias = Vec3::new(0.0, 0.0, 0.0);
-            // if scene.hit(light_ray, 0.001..f64::INFINITY).is_some() {
-            //     // We hit something, no direct light
-            //     light_multiplier = Vec3::new(0.5, 0.5, 0.5);
-            // } else {
-            //     let something = ray.dir().normalize().dot(light_dir).abs().clamp(0.0, 1.0).mul(1.1).powi(2);
-            //     // light_bias = something * light_multiplier;
-            //     // light_bias = something * Vec3::new(1.0, 1.0, 1.0);
-            // }
+            let light = hit_result.material().get_light();
 
             if let Some(scatter) = hit_result.material().scatter(ray, &hit_result) {
-                return ((depth as f64) / (self.max_depth as f64)) * scatter.attenuation * self.ray_color(scatter.ray, scene, depth - 1);
+                return scatter.attenuation * self.ray_color(scatter.ray, scene, depth - 1) + light;
             }
 
-            return Vec3::zero();
+            return light;
         }
 
         let dir_n = ray.dir().normalize();
@@ -135,7 +123,6 @@ impl Camera {
             (1.0-a) * 1.0 + 1.0 * a,
             (1.0-a) * 1.0 + 1.0 * a,
         )
-        // Vec3::new(1.0, 1.0, 1.0)
     }
 }
 
