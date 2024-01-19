@@ -72,7 +72,7 @@ impl Camera {
             for x in 0..self.image_width {
                 // Average colors (anti-aliasing)
                 let mut color = Vec3::zero();
-                let sample_count = 100;
+                let sample_count = 1000;
                 for i in 0..sample_count {
                     let ray = self.ray_rand(x, y);
                     let color_i = self.ray_color(ray, &scene, self.max_depth);
@@ -116,13 +116,14 @@ impl Camera {
             return light;
         }
 
-        let dir_n = ray.dir().normalize();
-        let a = 0.5 * (dir_n.y() + 1.0);
-        Vec3::new(
-            (1.0-a) * 1.0 + 0.7 * a,
-            (1.0-a) * 1.0 + 1.0 * a,
-            (1.0-a) * 1.0 + 1.0 * a,
-        )
+        // let dir_n = ray.dir().normalize();
+        // let a = 0.5 * (dir_n.y() + 1.0);
+        // Vec3::new(
+        //     (1.0-a) * 1.0 + 0.7 * a,
+        //     (1.0-a) * 1.0 + 1.0 * a,
+        //     (1.0-a) * 1.0 + 1.0 * a,
+        // )
+        Vec3::zero()
     }
 }
 
