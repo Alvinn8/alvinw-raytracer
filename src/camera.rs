@@ -76,9 +76,11 @@ impl Camera {
                 for i in 0..sample_count {
                     let ray = self.ray_rand(x, y);
                     let color_i = self.ray_color(ray, &scene, self.max_depth);
-                    color += color_i;
+                    // color += color_i;
+                    color = color + color_i;
                 }
-                color /= sample_count as f64;
+                // color /= sample_count as f64;
+                color = color / (sample_count as f64);
 
                 let rgb = to_rgb(color.x(), color.y(), color.z());
                 img.put_pixel(x, y, rgb);

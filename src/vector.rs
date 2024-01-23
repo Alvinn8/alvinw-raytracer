@@ -1,16 +1,22 @@
+#![feature(stdsimd)]
+
+use std::arch::asm;
+use std::arch::x86_64::{__m128, __m256d, _mm256_cmp_pd, _mm256_set_pd, _mm256_store_pd, _mm_cmpeq_ps, _mm_extract_epi64, _mm_extract_ps, _mm_set_ps};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Range, Sub};
 use rand::random;
 
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Vec3 {
-    x: f64,
-    y: f64,
-    z: f64,
+    data: __m128
 }
 
 impl Vec3 {
     pub fn new(x: f64, y: f64, z: f64) -> Self {
-        Self { x, y, z }
+        unsafe {
+            Self {
+                data: _mm_set_ps(x as f32, y as f32, z as f32, 0.0)
+            }
+        }
     }
     pub fn zero() -> Self { Self::new(0.0, 0.0, 0.0) }
     pub fn random() -> Self {
@@ -26,29 +32,38 @@ impl Vec3 {
         }
     }
 
-    pub fn x(&self) -> f64 { self.x }
-    pub fn y(&self) -> f64 { self.y }
-    pub fn z(&self) -> f64 { self.z }
+    pub fn x(&self) -> f64 {
+        let result: [f32; 4] = unsafe { std::mem::transmute(self.data) };
+        result[3] as f64
+    }
+    pub fn y(&self) -> f64 {
+        let result: [f32; 4] = unsafe { std::mem::transmute(self.data) };
+        result[2] as f64
+    }
+    pub fn z(&self) -> f64 {
+        let result: [f32; 4] = unsafe { std::mem::transmute(self.data) };
+        result[1] as f64
+    }
 
     pub fn is_near_zero(&self) -> bool {
         let epsilon = 1e-8;
-        return self.x.abs() < epsilon && self.y.abs() < epsilon && self.z.abs() < epsilon;
+        return self.x().abs() < epsilon && self.y().abs() < epsilon && self.z().abs() < epsilon;
     }
 
     pub fn norm_sq(&self) -> f64 {
-        self.x * self.x + self.y * self.y + self.z * self.z
+        self.x() * self.x() + self.y() * self.y() + self.z() * self.z()
     }
     pub fn norm(&self) -> f64 {
         self.norm_sq().sqrt()
     }
     pub fn dot(self, other: Self) -> f64 {
-        self.x * other.x + self.y * other.y + self.z * other.z
+        self.x() * other.x() + self.y() * other.y() + self.z() * other.z()
     }
     pub fn cross(self, other: Self) -> Self {
         Self::new(
-            self.y * other.z - self.z * other.y,
-            self.z * other.x  - self.x * other.z,
-            self.x * other.y - self.y * other.x
+            self.y() * other.z() - self.z() * other.y(),
+            self.z() * other.x() - self.x() * other.z(),
+            self.x() * other.y() - self.y() * other.x()
         )
     }
     pub fn normalize(self) -> Self {
@@ -68,26 +83,32 @@ impl Vec3 {
     }
 }
 
+impl PartialEq for Vec3 {
+    fn eq(&self, other: &Self) -> bool {
+        self.x() == other.x() && self.y() == other.y() && self.z() == other.z()
+    }
+}
+
 // Vector addition
 impl Add for Vec3 {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
         Vec3::new(
-            self.x + rhs.x,
-            self.y + rhs.y,
-            self.z + rhs.z,
+            self.x() + rhs.x(),
+            self.y() + rhs.y(),
+            self.z() + rhs.z(),
         )
     }
 }
 
-impl AddAssign for Vec3 {
-    fn add_assign(&mut self, rhs: Self) {
-        self.x += rhs.x;
-        self.y += rhs.y;
-        self.z += rhs.z;
-    }
-}
+// impl AddAssign for Vec3 {
+//     fn add_assign(&mut self, rhs: Self) {
+//         self.x() += rhs.x();
+//         self.y() += rhs.y();
+//         self.z() += rhs.z();
+//     }
+// }
 
 // Vector subtraction
 impl Sub for Vec3 {
@@ -95,9 +116,9 @@ impl Sub for Vec3 {
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self::new(
-            self.x - rhs.x,
-            self.y - rhs.y,
-            self.z - rhs.z,
+            self.x() - rhs.x(),
+            self.y() - rhs.y(),
+            self.z() - rhs.z(),
         )
     }
 }
@@ -108,9 +129,9 @@ impl Mul<Vec3> for f64 {
 
     fn mul(self, rhs: Vec3) -> Self::Output {
         Vec3::new(
-            self * rhs.x,
-            self * rhs.y,
-            self * rhs.z,
+            self * rhs.x(),
+            self * rhs.y(),
+            self * rhs.z(),
         )
     }
 }
@@ -120,9 +141,9 @@ impl Neg for Vec3 {
 
     fn neg(self) -> Self::Output {
         Self::new(
-            -self.x,
-            -self.y,
-            -self.z,
+            -self.x(),
+            -self.y(),
+            -self.z(),
         )
     }
 }
@@ -133,20 +154,20 @@ impl Div<f64> for Vec3 {
 
     fn div(self, rhs: f64) -> Self::Output {
         Self::new(
-            self.x / rhs,
-            self.y / rhs,
-            self.z / rhs,
+            self.x() / rhs,
+            self.y() / rhs,
+            self.z() / rhs,
         )
     }
 }
 
-impl DivAssign<f64> for Vec3 {
-    fn div_assign(&mut self, rhs: f64) {
-        self.x /= rhs;
-        self.y /= rhs;
-        self.z /= rhs;
-    }
-}
+// impl DivAssign<f64> for Vec3 {
+//     fn div_assign(&mut self, rhs: f64) {
+//         self.x() /= rhs;
+//         self.y() /= rhs;
+//         self.z() /= rhs;
+//     }
+// }
 
 // Multiplication
 impl Mul<Vec3> for Vec3 {
@@ -154,9 +175,9 @@ impl Mul<Vec3> for Vec3 {
 
     fn mul(self, rhs: Vec3) -> Self::Output {
         Vec3::new(
-            self.x * rhs.x,
-            self.y * rhs.y,
-            self.z * rhs.z,
+            self.x() * rhs.x(),
+            self.y() * rhs.y(),
+            self.z() * rhs.z(),
         )
     }
 }
@@ -164,6 +185,14 @@ impl Mul<Vec3> for Vec3 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn get_components() {
+        let vec = Vec3::new(1.0, 2.0, 3.0);
+        assert_eq!(vec.x(), 1.0);
+        assert_eq!(vec.y(), 2.0);
+        assert_eq!(vec.z(), 3.0);
+    }
 
     #[test]
     fn vector_addition() {
@@ -198,6 +227,11 @@ mod tests {
 
     #[test]
     fn normalize() {
-        assert!((Vec3::new(4.0, 8.0, 9.0).normalize().norm() - 1.0).abs() < f64::EPSILON);
+        assert!((Vec3::new(4.0, 8.0, 9.0).normalize().norm() - 1.0).abs() < 0.0001);
+    }
+
+    #[test]
+    fn multiply_vector_components() {
+        assert_eq!(Vec3::new(1.0, 2.0, 3.0) * Vec3::new(4.0, 5.0, 6.0), Vec3::new(4.0, 10.0, 18.0));
     }
 }
