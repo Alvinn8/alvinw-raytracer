@@ -9,6 +9,7 @@ mod obj;
 
 use std::fs::File;
 use image::ImageOutputFormat;
+use microbench::{Options, retain};
 use crate::camera::Camera;
 use crate::material::Material;
 use crate::obj::obj_to_triangles;
@@ -16,7 +17,25 @@ use crate::scene::Scene;
 use crate::shapes::{InfinitePlane, Sphere, Triangle};
 use crate::vector::Vec3;
 
+fn bench() {
+    let options = Options::default();
+    microbench::bench(&options, "foo", || {
+        let a = Vec3::new(1.0, 2.0, 3.0);
+        let b = Vec3::new(4.0, 5.0, 6.0);
+
+        let res = a + b;
+        retain(res);
+    });
+}
+
 fn main() {
+    if false {
+        // bench();
+        let a = Vec3::new(5.0, 0.0, 0.0);
+        let b = Vec3::new(5.0, 0.0, 0.0);
+        a.dot(b);
+        return;
+    }
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 500;
     let image_height = (image_width as f64 / aspect_ratio) as u32;

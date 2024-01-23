@@ -1,7 +1,7 @@
 #![feature(stdsimd)]
 
 use std::arch::asm;
-use std::arch::x86_64::{__m128, __m256d, _mm256_cmp_pd, _mm256_set_pd, _mm256_store_pd, _mm_cmpeq_ps, _mm_extract_epi64, _mm_extract_ps, _mm_set_ps};
+use std::arch::x86_64::{__m128, __m256d, _mm256_cmp_pd, _mm256_set_pd, _mm256_store_pd, _mm_add_ps, _mm_cmpeq_ps, _mm_dp_ps, _mm_extract_epi64, _mm_extract_ps, _mm_mul_ps, _mm_set_ps, _mm_sub_ps};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Range, Sub};
 use rand::random;
 
@@ -51,13 +51,16 @@ impl Vec3 {
     }
 
     pub fn norm_sq(&self) -> f64 {
-        self.x() * self.x() + self.y() * self.y() + self.z() * self.z()
+        self.dot(*self)
     }
     pub fn norm(&self) -> f64 {
         self.norm_sq().sqrt()
     }
     pub fn dot(self, other: Self) -> f64 {
-        self.x() * other.x() + self.y() * other.y() + self.z() * other.z()
+        let res = unsafe { _mm_dp_ps::<0xFF>(self.data, other.data) };
+        let unpacked: [f32; 4] = unsafe { std::mem::transmute(res) };
+        // println!("unpacked = {:?}", unpacked);
+        unpacked[0] as f64
     }
     pub fn cross(self, other: Self) -> Self {
         Self::new(
@@ -94,11 +97,8 @@ impl Add for Vec3 {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Vec3::new(
-            self.x() + rhs.x(),
-            self.y() + rhs.y(),
-            self.z() + rhs.z(),
-        )
+        let res = unsafe { _mm_add_ps(self.data, rhs.data) };
+        Vec3 { data: res }
     }
 }
 
@@ -115,11 +115,8 @@ impl Sub for Vec3 {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Self::new(
-            self.x() - rhs.x(),
-            self.y() - rhs.y(),
-            self.z() - rhs.z(),
-        )
+        let res = unsafe { _mm_sub_ps(self.data, rhs.data) };
+        Vec3 { data: res }
     }
 }
 
@@ -128,11 +125,7 @@ impl Mul<Vec3> for f64 {
     type Output = Vec3;
 
     fn mul(self, rhs: Vec3) -> Self::Output {
-        Vec3::new(
-            self * rhs.x(),
-            self * rhs.y(),
-            self * rhs.z(),
-        )
+        Vec3::new(self, self, self) * rhs
     }
 }
 
@@ -140,11 +133,7 @@ impl Neg for Vec3 {
     type Output = Vec3;
 
     fn neg(self) -> Self::Output {
-        Self::new(
-            -self.x(),
-            -self.y(),
-            -self.z(),
-        )
+        Vec3::new(-1.0, -1.0, -1.0) * self
     }
 }
 
@@ -153,11 +142,8 @@ impl Div<f64> for Vec3 {
     type Output = Vec3;
 
     fn div(self, rhs: f64) -> Self::Output {
-        Self::new(
-            self.x() / rhs,
-            self.y() / rhs,
-            self.z() / rhs,
-        )
+        let scale = 1.0 / rhs;
+        Vec3::new(scale, scale, scale) * self
     }
 }
 
@@ -174,11 +160,8 @@ impl Mul<Vec3> for Vec3 {
     type Output = Vec3;
 
     fn mul(self, rhs: Vec3) -> Self::Output {
-        Vec3::new(
-            self.x() * rhs.x(),
-            self.y() * rhs.y(),
-            self.z() * rhs.z(),
-        )
+        let res = unsafe { _mm_mul_ps(self.data, rhs.data) };
+        Vec3 { data: res }
     }
 }
 
