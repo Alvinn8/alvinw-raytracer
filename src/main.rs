@@ -38,7 +38,7 @@ fn main() {
     let glass2 = Material::Glass { refractive_index: 1.5 };
     let light1 = Material::Light { color: Vec3::new(1.0, 0.5, 0.5), intensity: 50.0 };
 
-    scene.add_inf_plane(InfinitePlane::new(0.5, Vec3::new(0.0, -1.0, 0.0), ground_material));
+    scene.add_inf_plane(InfinitePlane::new(0.5, Vec3::new(0.0, -1.0, 0.0), metal1.clone()));
     // scene.add_sphere(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0, ground_material));
     scene.add_sphere(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5, metal1));
     scene.add_sphere(Sphere::new(Vec3::new(-1.0, 0.0, -1.0), -0.4, glass2));
